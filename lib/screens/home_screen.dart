@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<List<Track>>> _data = _load();
 
   Future<List<List<Track>>> _load() =>
-      Future.wait(_featuredArtists.map((a) => musicApi.artistSongs(a)));
+      musicApi.songsOfArtists(_featuredArtists);
 
   Future<void> _refresh() async {
     final next = _load();

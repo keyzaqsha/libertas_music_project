@@ -20,10 +20,11 @@ class AudioService {
     }
 
     current.value = track;
-    historyService.addPlayed(track);
     try {
       await player.stop(); // hentikan lagu sebelumnya
       await player.setUrl(track.previewUrl!);
+      // Dicatat setelah berhasil dimuat, supaya lagu yang gagal tidak masuk riwayat.
+      historyService.addPlayed(track);
       player.play(); // tidak di-await: Future-nya baru selesai saat lagu habis
       return null;
     } on PlayerInterruptedException {

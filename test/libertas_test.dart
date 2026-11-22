@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:libertas/models/track.dart';
 import 'package:libertas/screens/library_screen.dart';
+import 'package:libertas/screens/search_screen.dart';
 import 'package:libertas/services/favorite_service.dart';
 import 'package:libertas/services/history_service.dart';
 import 'package:libertas/services/music_api_service.dart';
@@ -97,6 +98,31 @@ void main() {
         throwsA(predicate((e) => '$e'.contains('No internet connection'))),
       );
     });
+    test('Home survives one artist failing, errors only if all fail', () async {
+      final someFail = MusicApiService(
+        client: MockClient((req) async {
+          if (req.url.queryParameters['term'] == 'B') {
+            return http.Response('', 403);
+          }
+          return http.Response(
+            jsonEncode({
+              'results': [songJson(1)],
+            }),
+            200,
+          );
+        }),
+      );
+      final results = await someFail.songsOfArtists(['A', 'B', 'C']);
+      expect(results.map((r) => r.length), [1, 0, 1]);
+
+      final allFail = MusicApiService(
+        client: MockClient((_) async => http.Response('', 403)),
+      );
+      expect(
+        allFail.songsOfArtists(['A', 'B']),
+        throwsA(predicate((e) => '$e'.contains('Too many requests'))),
+      );
+    });
   });
 
   group('FavoriteService', () {
@@ -150,5 +176,14 @@ void main() {
     await tester.pump();
     expect(find.text('Song 5'), findsOneWidget);
     expect(find.text('No favorites yet'), findsNothing);
+  });
+
+  testWidgets('Search opened from an artist does not crash', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      const MaterialApp(home: SearchScreen(initialQuery: 'Tulus')),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('Tulus'), findsOneWidget); // terisi di search bar
   });
 }

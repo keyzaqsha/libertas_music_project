@@ -39,7 +39,8 @@ class _SearchScreenState extends State<SearchScreen> {
     term = term.trim();
     if (term.isEmpty) return;
     _controller.text = term;
-    FocusScope.of(context).unfocus();
+    // Tanpa context, jadi aman dipanggil dari initState (tap artis di Home).
+    FocusManager.instance.primaryFocus?.unfocus();
     historyService.addSearch(term);
     setState(() {
       _term = term;

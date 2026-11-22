@@ -36,6 +36,24 @@ class MusicApiService {
         'limit': '$limit',
       });
 
+  /// Lagu dari beberapa artis sekaligus (Home). Artis yang gagal (mis. kena rate limit)
+  /// diganti daftar kosong; error hanya dilempar jika semuanya gagal.
+  Future<List<List<Track>>> songsOfArtists(List<String> artists) async {
+    final errors = <Object>[];
+    final results = await Future.wait(
+      artists.map(
+        (a) => artistSongs(a).catchError((Object e) {
+          errors.add(e);
+          return <Track>[];
+        }),
+      ),
+    );
+    if (artists.isNotEmpty && errors.length == artists.length) {
+      throw errors.first;
+    }
+    return results;
+  }
+
   /// Tracklist satu album.
   Future<List<Track>> albumTracks(int collectionId) =>
       _get('/lookup', {'id': '$collectionId', 'entity': 'song'});
